@@ -1,0 +1,28 @@
+                             Collections
+                             ===========
+
+Author: Oliver Charles <oliver.g.charles@googlemail.com>
+Date: 2008-11-26 13:03:57 GMT
+
+
+1 Collections
+~~~~~~~~~~~~~
+`collections' is a tool for synchronizing your local music collection
+with MusicBrainz collections service. This allows you to keep track of
+all the releases you own - and the MusicBrainz front end to
+collections is most likely to change and advance in the future.
+
+2 Requirements
+~~~~~~~~~~~~~~
+`collections' requires SQLite to be installed, as a local database is
+maintained of all releases that have been added.
+
+3 Usage
+~~~~~~~
+Usage of `collections' is simple:
+
+  ./collections /path/to/music/collection
+
+4 Known Bugs
+~~~~~~~~~~~~
+  - Currently only supports MP3s
