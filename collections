@@ -1,0 +1,65 @@
+#!/usr/bin/perl
+
+use DBI;
+use Cwd;
+use MP3::Tag;
+use File::Next;
+use LWP::UserAgent;
+use HTTP::Request::Common qw(POST);
+
+use strict;
+
+($ARGV[0]) or die("\tUsage: ./collections /path/to/folder/of/music/\n\n");
+chdir($ARGV[0]) or die("Invalid directory path entered.\n");
+my $musicdir = Cwd::cwd();
+
+# Errrm, I should probably ask for credentials in a nicer way.
+print "Enter MusicBrainz Username:\n";
+chop(my $username = <STDIN>);
+
+print "Enter MusicBrainz Password:\n";
+chop(my $password = <STDIN>);
+
+my $database = $ENV{HOME}.'/.collections.db';
+my $dbh = DBI->connect("dbi:SQLite:dbname=$database")
+    or die("Couldn't connect to SQLite database.\n");
+my $dropsql = $dbh->prepare("DROP TABLE IF EXISTS collections;");
+$dropsql->execute() or die("$DBI::errstr\n");
+my $tablesql = $dbh->prepare("CREATE TABLE collections (mbid CHAR(36) NOT NULL);"); 
+$tablesql->execute() or die("$DBI::errstr\n");
+
+# TODO: Try alternate tag reading crap, other than MP3::Tag (Audio::TagLib) for other formats.
+print "\nBeginning file search...\n";
+my $files = File::Next::files({ file_filter => sub { /\.mp3$/i } }, $musicdir);
+
+print "Gathering Album MBID values...\n";
+while (defined(my $file = $files->())) {
+    my $mp3 = MP3::Tag->new($file);
+    my $mbid = $mp3->select_id3v2_frame_by_descr('TXXX[MusicBrainz Album Id]');
+    if ($mbid) {
+        my $insertsql = $dbh->prepare("INSERT INTO collections (mbid) VALUES (?)");
+        $insertsql->execute($mbid);
+    }
+}
+
+print "Processing data to be submitted...\n";
+my $mbidspost = $dbh->prepare("SELECT DISTINCT(mbid) FROM collections");
+$mbidspost->execute();
+my $poststring = "";
+while (my @mbidpost = $mbidspost->fetchrow_array) {
+    $poststring .= "$mbidpost[0],";
+}
+
+print "Sending data... ";
+my $ua = LWP::UserAgent->new;
+$ua->credentials(
+    'musicbrainz.org:80',
+    'musicbrainz.org',
+    $username => $password
+);
+my $req = POST "http://musicbrainz.org/ws/1/collection/", [ addAlbums => $poststring ];
+my $request = $ua->request($req);
+
+($request->is_success) ? print "Success!\n" : print $request->status_line . "\n";
+
+1;
