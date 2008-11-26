@@ -63,12 +63,12 @@ my @files = File::Find::Rule->file
                             ->in($collections_root);
 
 print "Gathering Album MBID values...\n" if $verbose;
+my $insertsql = $dbh->prepare('INSERT INTO collections (mbid) VALUES (?)');
 for my $file (@files) {
     my $mp3 = MP3::Tag->new($file);
     my $mbid = $mp3->select_id3v2_frame_by_descr('TXXX[MusicBrainz Album Id]');
     if ($mbid) {
         print "Adding to collection $mbid" if $verbose;
-        my $insertsql = $dbh->prepare('INSERT INTO collections (mbid) VALUES (?)');
         $insertsql->execute($mbid);
     }
 }
