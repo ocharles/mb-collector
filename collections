@@ -23,15 +23,14 @@ Valid options are:
 EOUSAGE
 }
 
-my $conf = Config::Tiny->new;
-$conf->read(my_home . "/.collectionsrc");
+my $conf = Config::Tiny->read(my_home . "/.collectionsrc");
 
 my $username = $conf->{_}->{username} || '';
 my $password = $conf->{_}->{password} || '';
 my $verbose  = '';
 
-my $results = GetOptions( 'username|h' => \$username,
-                          'password|h' => \$password,
+my $results = GetOptions( 'username|u=s' => \$username,
+                          'password|p=s' => \$password,
                           'verbose|v'  => \$verbose,
                           'help|h'     => \&usage,);
 
