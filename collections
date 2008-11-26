@@ -1,57 +1,95 @@
 #!/usr/bin/perl
 
-use DBI;
-use Cwd;
-use MP3::Tag;
-use File::Next;
-use LWP::UserAgent;
-use HTTP::Request::Common qw(POST);
-
 use strict;
 
-($ARGV[0]) or die("\tUsage: ./collections /path/to/folder/of/music/\n\n");
-chdir($ARGV[0]) or die("Invalid directory path entered.\n");
-my $musicdir = Cwd::cwd();
+use Config::Tiny;
+use Cwd;
+use DBI;
+use File::Find::Rule;
+use File::HomeDir qw(my_home);
+use Getopt::Long;
+use HTTP::Request::Common qw(POST);
+use LWP::UserAgent;
+use MP3::Tag;
+
+sub usage {
+    return <<EOUSAGE
+Usage: collections [OPTIONS] /path/to/music
+
+Valid options are:
+    -u --username         Specify account name on MusicBrainz.org
+    -p --password         Specify password for account on MusicBrainz.org
+    -h --help             Display this message
+EOUSAGE
+}
+
+my $conf = Config::Tiny->new;
+$conf->read(my_home . "/.collectionsrc");
+
+my $username = $conf->{_}->{username} || '';
+my $password = $conf->{_}->{password} || '';
+my $verbose  = '';
+
+my $results = GetOptions( 'username|h' => \$username,
+                          'password|h' => \$password,
+                          'verbose|v'  => \$verbose,
+                          'help|h'     => \&usage,);
+
+if ($username eq '' || $password eq '') {
+    print 'Invalid credentials. Please specify both username and password options.';
+    exit 1;
+}
+
+my $collections_root = $ARGV[-1];
+chdir $collections_root
+    or die("'$collections_root' is not a valid directory");
 
 # Errrm, I should probably ask for credentials in a nicer way.
-print "Enter MusicBrainz Username:\n";
-chop(my $username = <STDIN>);
-
-print "Enter MusicBrainz Password:\n";
-chop(my $password = <STDIN>);
-
-my $database = $ENV{HOME}.'/.collections.db';
+my $database = my_home . '/.collections.db';
 my $dbh = DBI->connect("dbi:SQLite:dbname=$database")
-    or die("Couldn't connect to SQLite database.\n");
+    or die("Couldn't connect to SQLite database '$database'");
+
 my $dropsql = $dbh->prepare("DROP TABLE IF EXISTS collections;");
-$dropsql->execute() or die("$DBI::errstr\n");
-my $tablesql = $dbh->prepare("CREATE TABLE collections (mbid CHAR(36) NOT NULL);"); 
-$tablesql->execute() or die("$DBI::errstr\n");
+$dropsql->execute
+    or die("$DBI::errstr\n");
+
+my $tablesql = $dbh->prepare("CREATE TABLE collections (mbid CHAR(36) NOT NULL);");
+$tablesql->execute
+    or die("$DBI::errstr\n");
 
 # TODO: Try alternate tag reading crap, other than MP3::Tag (Audio::TagLib) for other formats.
-print "\nBeginning file search...\n";
-my $files = File::Next::files({ file_filter => sub { /\.mp3$/i } }, $musicdir);
+print "\nBeginning file search...\n" if $verbose;
+my @files = File::Find::Rule->file
+                            ->name('*.mp3')
+                            ->in($collections_root);
 
-print "Gathering Album MBID values...\n";
-while (defined(my $file = $files->())) {
+print "Gathering Album MBID values...\n" if $verbose;
+for my $file (@files) {
     my $mp3 = MP3::Tag->new($file);
     my $mbid = $mp3->select_id3v2_frame_by_descr('TXXX[MusicBrainz Album Id]');
     if ($mbid) {
-        my $insertsql = $dbh->prepare("INSERT INTO collections (mbid) VALUES (?)");
+        print "Adding to collection $mbid" if $verbose;
+        my $insertsql = $dbh->prepare('INSERT INTO collections (mbid) VALUES (?)');
         $insertsql->execute($mbid);
     }
 }
 
-print "Processing data to be submitted...\n";
-my $mbidspost = $dbh->prepare("SELECT DISTINCT(mbid) FROM collections");
+print "Processing data to be submitted...\n" if $verbose;
+my $mbidspost = $dbh->prepare('SELECT DISTINCT(mbid) FROM collections');
 $mbidspost->execute();
-my $poststring = "";
+
+my $poststring;
 while (my @mbidpost = $mbidspost->fetchrow_array) {
     $poststring .= "$mbidpost[0],";
 }
 
-print "Sending data... ";
+unless ($poststring) {
+    die "No new albums found to add to collection";
+}
+
+print "Sending data... " if $verbose;
 my $ua = LWP::UserAgent->new;
+$ua->env_proxy;
 $ua->credentials(
     'musicbrainz.org:80',
     'musicbrainz.org',
@@ -60,6 +98,33 @@ $ua->credentials(
 my $req = POST "http://musicbrainz.org/ws/1/collection/", [ addAlbums => $poststring ];
 my $request = $ua->request($req);
 
-($request->is_success) ? print "Success!\n" : print $request->status_line . "\n";
+$request->is_success ? print "Success!\n"
+                     : print $request->status_line . "\n";
 
 1;
+
+=head1 NAME
+
+collections - manage your MusicBrainz collection from local files
+
+=head1 SYNOPSIS
+
+    ./collections -u username -p password /path/to/music
+
+=head1 DESCRIPTION
+
+collections is a small tool to help you keep your MusicBrainz
+collection information in sync with your local music files
+
+=head1 AUTHORS
+
+Mustaqil Ali
+Oliver Charles
+
+=head1 LICENSE
+
+Copyright (C) 2008 Mustaqil Ali. All Rights Reserved.
+
+This module is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+
+=cut
