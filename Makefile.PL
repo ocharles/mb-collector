@@ -8,9 +8,11 @@ license 'perl';
 perl_version '5.00800';
 
 requires 'DBI';
+requires 'Config::Tiny';
 requires 'Cwd';
 requires 'MP3::Tag';
-requires 'File::Next';
+requires 'File::Find::Rule';
+requires 'File::HomeDir';
 requires 'LWP::UserAgent';
 requires 'HTTP::Request::Common';
 
