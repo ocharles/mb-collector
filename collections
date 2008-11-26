@@ -82,9 +82,8 @@ while (my @mbidpost = $mbidspost->fetchrow_array) {
     $poststring .= "$mbidpost[0],";
 }
 
-unless ($poststring) {
-    die "No new albums found to add to collection";
-}
+die "No new albums found to add to collection"
+    unless $poststring;
 
 print "Sending data... " if $verbose;
 my $ua = LWP::UserAgent->new;
