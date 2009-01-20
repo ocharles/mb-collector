@@ -73,10 +73,8 @@ sub releases
         my $e = shift;
         
         return if $e->is_dir;
-        
-        my $mp3 = MP3::Tag->new($e->absolute);
-        my $mbid = $mp3->select_id3v2_frame_by_descr('TXXX[MusicBrainz Album Id]');
-        
+                
+        my $mbid = MusicBrainz::Parsers->release_mbid(file => $e);
         push @mbids, $mbid
             if $mbid;
     });
