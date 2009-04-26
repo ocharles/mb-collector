@@ -10,12 +10,17 @@ has 'lwp' => (
     builder => '_build_lwp'
 );
 
+has 'no_proxy' => (
+    isa => 'Bool',
+    is  => 'rw',
+);
+
 sub _build_lwp
 {
     my $self = shift;
 
     my $lwp = LWP::UserAgent->new;
-    $lwp->env_proxy;
+    $lwp->env_proxy unless $self->no_proxy;
 
     $lwp->credentials(
         'musicbrainz.org:80',

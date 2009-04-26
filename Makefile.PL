@@ -14,9 +14,14 @@ requires 'LWP::UserAgent';
 requires 'Moose';
 requires 'MooseX::AttributeHelpers';
 requires 'MooseX::Params::Validate';
-requires 'MP3::Tag';
 requires 'Path::Class';
 requires 'SQL::Translator';
+
+feature 'FLAC support',
+    'Music::Tag', 'Music::Tag::FLAC', 'Text::Levenshtein';
+
+feature 'MP3 support',
+    'MP3::Tag';
 
 install_script 'collections';
 

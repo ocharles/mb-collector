@@ -24,7 +24,10 @@ sub _build_kioku
                 data_type => 'varchar',
                 is_nullable => 1,
             },
-            'release',
+            'release' => {
+                data_type => 'varchar',
+                is_nullable => 1,
+            }
         ],
         create => 1
     ) or die "Could not connect to Genius KiokuDB";

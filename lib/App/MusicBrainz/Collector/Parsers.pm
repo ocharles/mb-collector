@@ -1,8 +1,11 @@
 package App::MusicBrainz::Collector::Parsers;
 use MooseX::Singleton;
 
-use MooseX::Params::Validate;
-use MooseX::Types::Path::Class qw(File);
+use MooseX::AttributeHelpers;
+use Path::Class qw( file );
+use UNIVERSAL::require;
+
+with 'App::MusicBrainz::Collector::Parser';
 
 =head1 NAME
 
@@ -25,7 +28,11 @@ A hash table of file-extensions to parser instances
 has 'parsers' => (
     is => 'ro',
     isa => 'HashRef',
-    default => sub { +{} }
+    default => sub { +{} },
+    metaclass => 'Collection::Hash',
+    provides => {
+        keys => 'known_extensions',
+    }
 );
 
 =head1 METHODS
@@ -36,19 +43,40 @@ Try and determine the release MBID for a file, using various parsers.
 
 =cut
 
-sub determine_release_mbid
+sub parse_release_id
 {
     my $self = shift;
-    my ($file) = validatep(\@_,
-        file => { isa => File }
-    );
+    my ($file) = @_;
 
-    my ($extension) = ($file->basename =~ /.*\.(.*)^/);
+    $file = file($file);
+
+    $file = file($file);
+    my ($extension) = ($file->basename =~ /.*\.(.*)$/);
     return unless $extension;
 
     if ($self->parsers->{$extension})
     {
-        return $self->parsers->{$extension}->parse($file);
+        return $self->parsers->{$extension}->parse_release_id($file->absolute->stringify);
+    }
+    else
+    {
+        warn "No parser knows how to handle $extension";
+        return;
+    }
+}
+
+sub parse_track_id
+{
+    my $self = shift;
+    my ($file) = @_;
+
+    $file = file($file);
+    my ($extension) = ($file->basename =~ /.*\.(.*)$/);
+    return unless $extension;
+
+    if ($self->parsers->{$extension})
+    {
+        return $self->parsers->{$extension}->parse_track_id($file->absolute->stringify);
     }
     else
     {
@@ -66,11 +94,9 @@ Register a parser for a given file_type
 sub register_parser
 {
     my $self = shift;
-    my ($extension, $parser) = validatep(\@_,
-        extension => { isa => 'Str' },
-        parser    => { isa => 'MusicBrainz::Parser' },
-    );
+    my ($extension, $parser) = @_;
 
+    $parser->require;
     $self->parsers->{$extension} = $parser;
 }
 

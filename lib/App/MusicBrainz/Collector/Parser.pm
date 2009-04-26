@@ -18,7 +18,7 @@ Given a $file, attempt to parse it and return the release mbid.
 
 =cut
 
-requires 'parse';
+requires 'parse_release_id', 'parse_track_id';
 
 no Moose::Role;
 
