@@ -1,23 +1,24 @@
 use inc::Module::Install;
 
-name 'MusicBrainz::Collections';
-abstract 'Manage your MusicBrainz collection from local music files';
-author 'Mustaqil Ali';
-version '0.01';
-license 'perl';
-perl_version '5.00800';
+name 'App::MusicBrainz::Collector';
+all_from 'lib/App/MusicBrainz/Collector.pm';
 
-requires 'DBI';
-requires 'Config::Tiny';
 requires 'Cwd';
-requires 'MP3::Tag';
+requires 'DBD::SQLite';
 requires 'File::Find::Rule';
 requires 'File::HomeDir';
-requires 'LWP::UserAgent';
 requires 'HTTP::Request::Common';
+requires 'KiokuDB';
+requires 'KiokuDB::Backend::DBI';
+requires 'LWP::UserAgent';
+requires 'Moose';
+requires 'MooseX::AttributeHelpers';
+requires 'MooseX::Params::Validate';
+requires 'MP3::Tag';
+requires 'Path::Class';
+requires 'SQL::Translator';
 
 install_script 'collections';
 
 auto_install;
-
 WriteAll;

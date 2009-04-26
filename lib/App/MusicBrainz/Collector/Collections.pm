@@ -1,4 +1,4 @@
-package MusicBrainz::Collections;
+package App::MusicBrainz::Collector::Collections;
 use Moose;
 
 use LWP::UserAgent;
@@ -11,7 +11,7 @@ with 'MooseX::Getopt';
 
 =head1 NAME
 
-MusicBrainz::Collections - support scanning a media folder
+MusicBrainz::Collector::Collections - support scanning a media folder
 for tagged music, and adding it to your MusicBrainz collection
 
 =head1 DESCRIPTION

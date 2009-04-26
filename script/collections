@@ -1,4 +1,16 @@
 #!/usr/bin/perl
+use strict;
+use warnings;
+
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+
+use App::MusicBrainz::Collector::Cmd;
+App::MusicBrainz::Collector::Cmd->run;
+
+=pod
+
+#!/usr/bin/perl
 
 use strict;
 

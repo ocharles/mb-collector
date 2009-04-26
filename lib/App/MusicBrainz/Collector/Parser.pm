@@ -1,5 +1,5 @@
-package MusicBrainz::Parser;
-use Moose;
+package App::MusicBrainz::Collector::Parser;
+use Moose::Role;
 
 =head1 NAME
 
@@ -12,16 +12,14 @@ marked methods!
 
 =head1 METHODS
 
-=head2 parse -- must be implemented
+=head2 parse
 
 Given a $file, attempt to parse it and return the release mbid.
 
 =cut
 
-sub parse
-{
-    my ($self, $file) = @_;
-    die;
-}
+requires 'parse';
+
+no Moose::Role;
 
 1;

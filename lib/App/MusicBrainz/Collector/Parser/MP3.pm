@@ -1,6 +1,6 @@
-package MusicBrainz::Parser::MP3;
+package App::MusicBrainz::Collector::Parser::MP3;
 use Moose;
-extends 'MusicBrainz::Parser';
+with 'App::MusicBrainz::Collector::Parser';
 
 use MooseX::Params::Validate;
 use MooseX::Types::Path::Class qw(File);
@@ -28,7 +28,7 @@ override 'parse' => sub
 
     my $mp3 = MP3::Tag->new($file->absolute);
     my $mbid = $mp3->select_id3v2_frame_by_descr('TXXX[MusicBrainz Album Id]');
-    
+
     return $mbid;
 };
 

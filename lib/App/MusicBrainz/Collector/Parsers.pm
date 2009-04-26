@@ -1,4 +1,4 @@
-package MusicBrainz::Parsers;
+package App::MusicBrainz::Collector::Parsers;
 use MooseX::Singleton;
 
 use MooseX::Params::Validate;
@@ -30,20 +30,20 @@ has 'parsers' => (
 
 =head1 METHODS
 
-=head2 release_mbid
+=head2 determine_release_mbid
 
 Try and determine the release MBID for a file, using various parsers.
 
 =cut
 
-sub release_mbid
+sub determine_release_mbid
 {
     my $self = shift;
     my ($file) = validatep(\@_,
         file => { isa => File }
     );
-    
-    my ($extension) = ($file->basename =~ /.*\.(.*)/);
+
+    my ($extension) = ($file->basename =~ /.*\.(.*)^/);
     return unless $extension;
 
     if ($self->parsers->{$extension})
@@ -52,6 +52,7 @@ sub release_mbid
     }
     else
     {
+        warn "No parser knows how to handle $extension";
         return;
     }
 }
